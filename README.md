@@ -29,7 +29,7 @@
 	}
 	```
 
-2. 根据表结构建立类并继承__MQFMDBObject__, 类的属性中对应数据库的必须使用__@dynamic__关键字声明该属性, 并且属性名__不能大写开头__
+2. 根据表结构建立类并继承**MQFMDBObject**, 类的属性中对应数据库的必须使用**@dynamic**关键字声明该属性, 并且属性名**不能大写开头**
 
 	```
 	@interface TDSession : MQFMDBObject
@@ -43,14 +43,14 @@
 	@end
 	```
 
-3. 	读取配置文件并使用__MQFMDB__打开数据库, 并在opertions block中建立表
+3. 	读取配置文件并使用**MQFMDB**打开数据库, 并在opertions block中建立表
 
 	```
 	self.userDB = [[MQFMDB alloc] initWithConfigContent:configContent];
-   [self.userDB openDataBaseWithForceOpenIfUpgradeFail:YES opertions:^(MQFMDB *db) {
-        /** 在这里创建表和其他操作 */
-        [db insertNewTable:[TDSession class]];
-    }];
+	[self.userDB openDataBaseWithForceOpenIfUpgradeFail:YES opertions:^(MQFMDB *db) {
+		/** 在这里创建表和其他操作 */
+		[db insertNewTable:[TDSession class]];
+	}];
 	```
 	
 4. 创建一条数据
@@ -66,7 +66,7 @@
 	[self.userDB saveOpertion];
 	```
 
-完成之后在`[MQFMDB MQFMDBFolder]`中已经创建一个数据库和一张名叫__TDSession__表并且表里有一条name等于session的数据。
+完成之后在`[MQFMDB MQFMDBFolder]`中已经创建一个数据库和一张名叫**TDSession**表并且表里有一条name等于session的数据。
 
 #### 修改数据
 
@@ -98,29 +98,29 @@
 	[self.userDB saveOpertion];
 	```
 
-完成之后__TDSession__表中`name == 'session'`的第一条数据的name变为了mmmm
+完成之后**TDSession**表中`name == 'session'`的第一条数据的name变为了mmmm
 
 <a id="config_intro"></a>
 
 ### 配置文件字段说明 
 
-* `identify`__数据库标识符 一个App里面每个数据库标识符必须是唯一的__
-* `version`__数据库版本号__
-* `key`__数据库密码__
-* `upgrade`__数据库升级的相关语句__
-* `path`__数据库存放位置__
+* `identify`	**数据库标识符 一个App里面每个数据库标识符必须是唯一的**
+* `version`	**数据库版本号**
+* `key`	**数据库密码**
+* `upgrade`	**数据库升级的相关语句**
+* `path`	**数据库存放位置**
 
 	>
 	内置了两个目录`<App>`、`<MQFMDB>`<br>
 	`<App>`在App根目录下一般用于读取内置数据库<br>
-	`<MQFMDB>`在Documents目录下的__MQFMDB__文件夹如果没有则会自动创建
+	`<MQFMDB>`在Documents目录下的**MQFMDB**文件夹如果没有则会自动创建
 
 
 ### 数据库升级
 
-1. 修改配置文件, 修改当前版本号, 并在__upgrade__建立一个在哪个版本升级的字段, 并在该字段里的__commands__里写入升级语句
+1. 修改配置文件, 修改当前版本号, 并在**upgrade**建立一个在哪个版本升级的字段, 并在该字段里的**commands**里写入升级语句
 
-	现在是从1.0.0升级到1.0.1，并在__TDSession__加入__count__字段
+	现在是从1.0.0升级到1.0.1，并在**TDSession**加入**count**字段
 	
 
 	```
@@ -139,7 +139,7 @@
 	}
 	```
 
-2. 修改__TDSession__类, 增加__count__属性，并且使用__@dynamic__声明该属性
+2. 修改**TDSession**类, 增加**count**属性，并且使用**@dynamic**声明该属性
 
 	```
 	@interface TDSession : MQFMDBObject

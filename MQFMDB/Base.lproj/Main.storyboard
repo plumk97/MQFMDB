@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina5_9" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15509"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="PWu-i6-bVm">
+                                <rect key="frame" x="0.0" y="44" width="125" height="34"/>
+                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="PWu-i6-bVm" secondAttribute="height" multiplier="125:34" id="1eK-CT-Yfi"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <state key="normal" title="插入">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="insertMessage:" destination="BYZ-38-t0r" eventType="touchUpInside" id="RRk-9g-8bv"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8IQ-v8-Tt6">
+                                <rect key="frame" x="125" y="44" width="125" height="34"/>
+                                <color key="backgroundColor" red="1" green="0.0" blue="0.03742904276491732" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="8IQ-v8-Tt6" secondAttribute="height" multiplier="125:34" id="BzQ-GP-Xw6"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <state key="normal" title="删除">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="removeMessage:" destination="BYZ-38-t0r" eventType="touchUpInside" id="BBi-WM-gnx"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="f1c-m5-oBi">
+                                <rect key="frame" x="250" y="44" width="125" height="34"/>
+                                <color key="backgroundColor" red="0.41646815575763574" green="0.38561272444261263" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="f1c-m5-oBi" secondAttribute="height" multiplier="125:34" id="4fr-E2-lOY"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <state key="normal" title="修改">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="modifyMessage:" destination="BYZ-38-t0r" eventType="touchUpInside" id="BO1-b9-wbK"/>
+                                    <action selector="removeMessage:" destination="BYZ-38-t0r" eventType="touchUpInside" id="cv8-lo-oBh"/>
+                                </connections>
+                            </button>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="100" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Pyc-xM-afk">
+                                <rect key="frame" x="0.0" y="78" width="375" height="700"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <prototypes>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="UITableViewCell" id="CYs-Wc-G8n">
+                                        <rect key="frame" x="0.0" y="28" width="375" height="100"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="CYs-Wc-G8n" id="b9k-27-bxS">
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="100"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
+                                </prototypes>
+                                <connections>
+                                    <outlet property="dataSource" destination="BYZ-38-t0r" id="QfB-kL-jfs"/>
+                                    <outlet property="delegate" destination="BYZ-38-t0r" id="NLg-8a-GJm"/>
+                                </connections>
+                            </tableView>
+                        </subviews>
+                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="8IQ-v8-Tt6" firstAttribute="leading" secondItem="PWu-i6-bVm" secondAttribute="trailing" id="1hd-vc-kiz"/>
+                            <constraint firstItem="f1c-m5-oBi" firstAttribute="width" secondItem="PWu-i6-bVm" secondAttribute="width" id="5YL-NA-CwE"/>
+                            <constraint firstItem="f1c-m5-oBi" firstAttribute="top" secondItem="HPW-45-7R4" secondAttribute="top" id="B1F-lA-ZTW"/>
+                            <constraint firstItem="Pyc-xM-afk" firstAttribute="top" secondItem="PWu-i6-bVm" secondAttribute="bottom" id="CyV-l2-yEa"/>
+                            <constraint firstItem="f1c-m5-oBi" firstAttribute="height" secondItem="PWu-i6-bVm" secondAttribute="height" id="ONF-Rg-pTZ"/>
+                            <constraint firstItem="PWu-i6-bVm" firstAttribute="top" secondItem="HPW-45-7R4" secondAttribute="top" id="Ojq-cV-s7r"/>
+                            <constraint firstItem="Pyc-xM-afk" firstAttribute="trailing" secondItem="HPW-45-7R4" secondAttribute="trailing" id="RZu-cb-l2N"/>
+                            <constraint firstItem="8IQ-v8-Tt6" firstAttribute="top" secondItem="HPW-45-7R4" secondAttribute="top" id="VEg-sa-Ce4"/>
+                            <constraint firstItem="f1c-m5-oBi" firstAttribute="trailing" secondItem="HPW-45-7R4" secondAttribute="trailing" id="aLb-Hf-xKl"/>
+                            <constraint firstItem="8IQ-v8-Tt6" firstAttribute="height" secondItem="PWu-i6-bVm" secondAttribute="height" id="btx-uB-dwo"/>
+                            <constraint firstItem="HPW-45-7R4" firstAttribute="bottom" secondItem="Pyc-xM-afk" secondAttribute="bottom" id="f4c-hY-lCC"/>
+                            <constraint firstItem="f1c-m5-oBi" firstAttribute="leading" secondItem="8IQ-v8-Tt6" secondAttribute="trailing" id="iQy-O5-GPz"/>
+                            <constraint firstItem="PWu-i6-bVm" firstAttribute="leading" secondItem="HPW-45-7R4" secondAttribute="leading" id="nDF-Sg-7WX"/>
+                            <constraint firstItem="Pyc-xM-afk" firstAttribute="leading" secondItem="HPW-45-7R4" secondAttribute="leading" id="x8c-Dr-aeI"/>
+                            <constraint firstItem="8IQ-v8-Tt6" firstAttribute="width" secondItem="PWu-i6-bVm" secondAttribute="width" id="xVT-2I-SWY"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="HPW-45-7R4"/>
+                    </view>
+                    <nil key="simulatedStatusBarMetrics"/>
+                    <connections>
+                        <outlet property="tableView" destination="Pyc-xM-afk" id="Ocm-p9-8De"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="32.799999999999997" y="36.206896551724142"/>
+        </scene>
+    </scenes>
+</document>

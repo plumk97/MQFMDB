@@ -29,7 +29,7 @@
 	}
 	```
 
-2. 根据表结构建立类并继承**MQFMDBObject**, 类的属性中对应数据库的必须使用**@dynamic**关键字声明该属性, 并且属性名**不能大写开头**
+2. 根据表结构建立类并继承**MQFMDBObject**, 类的属性中对应数据库的必须使用`@dynamic`关键字声明该属性, 并且属性名**不能大写开头**
 
 	```
 	@interface TDSession : MQFMDBObject
@@ -139,7 +139,7 @@
 	}
 	```
 
-2. 修改**TDSession**类, 增加**count**属性，并且使用**@dynamic**声明该属性
+2. 修改**TDSession**类, 增加**count**属性，并且使用`dynamic`声明该属性
 
 	```
 	@interface TDSession : MQFMDBObject

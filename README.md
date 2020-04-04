@@ -1,166 +1,156 @@
 ## MQFMDB
-在[FMDB](https://github.com/ccgus/fmdb)上封装了一层实现ORM操作
+在[FMDB](https://github.com/ccgus/fmdb)上封装了一层以对象的方式操作数据库类似CoreData
 
-由于使用了SQLCipher来加密数据库所以你需要安装FMDB/SQLCipher版本推荐使用2.7.5版本
+由于使用了SQLCipher来加密数据库所以你需要安装FMDB/SQLCipher版本
 
-`pod 'FMDB/SQLCipher', '=2.7.5'`
+`pod 'FMDB/SQLCipher'`
 
-目前支持的数据类型
+Demo提供了一个增删查找演示
 
-* NSString
-* NSDate
-* NSData
-* NSDictionary
-* NSArray
-* C基本数据类型
+### Conf 文件说明
+* `identify`__数据库标识符 一个App里面每个数据库标识符必须是唯一的__
+* `version`__数据库版本号__
+* `path`__数据库存放位置__
 
+内置了两个目录`<App>`、`<MQFMDB>`<br>
+`<App>`在App根目录下一般用于读取内置数据库<br>
+`<MQFMDB>`在Documents目录下的__MQFMDB__文件夹如果没有则会自动创建
 
-### 使用说明
+* `key`__数据库密码__
+* `upgrade`__数据库升级的相关__
 
-1. 创建[配置文件](#config_intro)
+### upgrade字段
 
-	```
-	{
-  		"identify": "MQFMDB_Demo",
-	  	"version": "1.0.0",
-  		"path": "<MQFMDB>/MQFMDB_Demo.sqlite",
-	  	"key": "123456789",
-  		"upgrade": {}
-	}
-	```
+假设TDSession类在1.0.0版本是这样的
 
-2. 根据表结构建立类并继承**MQFMDBObject**, 类的属性中对应数据库的必须使用`@dynamic`关键字声明该属性, 并且属性名**不能大写开头**
+```
+@interface TDSession : MQFMDBObject
 
-	```
-	@interface TDSession : MQFMDBObject
-	
-	@property (nonatomic, copy) NSString * name;
-	@end
-	
-	@implementation TDSession
-	
-	@dynamic name;
-	@end
-	```
+@property (nonatomic, copy) NSString * name;
+@end
+```
+现在升级到1.0.1版本在这个类加了一个count属性
 
-3. 	读取配置文件并使用**MQFMDB**打开数据库, 并在opertions block中建立表
+```
+@interface TDSession : MQFMDBObject
 
-	```
-	self.userDB = [[MQFMDB alloc] initWithConfigContent:configContent];
-	[self.userDB openDataBaseWithForceOpenIfUpgradeFail:YES opertions:^(MQFMDB *db) {
-		/** 在这里创建表和其他操作 */
-		[db insertNewTable:[TDSession class]];
-	}];
-	```
-	
-4. 创建一条数据
+@property (nonatomic, copy) NSString * name;
 
-	```
-	TDSession * session = [self.userDB insertNewObjectForTable:[TDSession class]];
-    session.name = @"session";
-	```
-	
-5. 保存数据
+/** version-1.0.1 */
+@property (nonatomic, assign) NSInteger count;
+@end
+```
 
-	```
-	[self.userDB saveOpertion];
-	```
+那么需要在工程里面添加一个sql升级脚本，并在配置文件里面填入路径，如下所示
 
-完成之后在`[MQFMDB MQFMDBFolder]`中已经创建一个数据库和一张名叫**TDSession**表并且表里有一条name等于session的数据。
+```
+{
+  "identify": "MQFMDB_Demo",
+  "version": "1.0.1",
+  "path": "<MQFMDB>/MQFMDB_Demo.sqlite",
+  "key": "123456789",
+  "upgrade": {
+      "1.0.0": {
+          "script": "<App>/db_upgrade_101.sql"
+      }
+  }
+}
+```
 
-#### 修改数据
+再次运行就完成了从1.0.0到1.0.1的升级,Demo中已经配置好了需要测试请按下面操作
 
-1. 读取配置文件打开数据库
+1. 取消TDSession.h文件中`@property (nonatomic, assign) NSInteger count;`注释
+2. 取消TDSession.m文件中`@dynamic count;`注释
+3. 注释ViewController中使用**MQFMDB_Demo**一行并且取消使用**MQFMDB_Demo-1.0.1**的注释
 
-	```
-	self.userDB = [[MQFMDB alloc] initWithConfigContent:configContent];
-   [self.userDB openDataBaseWithForceOpenIfUpgradeFail:YES opertions:^(MQFMDB *db) {
-        /** 在这里创建表和其他操作 */
-        [db insertNewTable:[TDSession class]];
-    }];
-	```
+然后运行就可以了，**运行之前需要保证当前数据库版本处于1.0.0版本**
 
-2. 查询数据, 并获取查询到的第一条
-
-	```
-	TDSession * session = [[self.userDB queryTable:[TDSession class] condition:@"name == 'session'"] firstObject];
-	```
-	
-3. 修改数据
-
-	```
-	session.name = "mmmm";
-	```
-
-4. 保存修改
-	
-	```
-	[self.userDB saveOpertion];
-	```
-
-完成之后**TDSession**表中`name == 'session'`的第一条数据的name变为了mmmm
-
-<a id="config_intro"></a>
-
-### 配置文件字段说明 
-
-* `identify`	**数据库标识符 一个App里面每个数据库标识符必须是唯一的**
-* `version`	**数据库版本号**
-* `key`	**数据库密码**
-* `upgrade`	**数据库升级的相关语句**
-* `path`	**数据库存放位置**
-
-	>
-	内置了两个目录`<App>`、`<MQFMDB>`<br>
-	`<App>`在App根目录下一般用于读取内置数据库<br>
-	`<MQFMDB>`在Documents目录下的**MQFMDB**文件夹如果没有则会自动创建
+### 使用方法
+> 具体使用方法请查看Demo 以下只是部分代码提取
 
 
-### 数据库升级
+__创建数据库表__
 
-1. 修改配置文件, 修改当前版本号, 并在**upgrade**建立一个在哪个版本升级的字段, 并在该字段里的**commands**里写入升级语句
+每个表都对应一个`MQFMDBObject`的子类，`MQFMDBObject`的`_Id`属性为主键不能手动去修改
 
-	现在是从1.0.0升级到1.0.1，并在**TDSession**加入**count**字段
-	
+`MQFMDBObject`的子类的属性如果使用`@dynamic`声明则视为表字段,__并且属性名称不能以大写开头__.
 
-	```
-	{
-	  "identify": "MQFMDB_Demo",
-	  "version": "1.0.1",
-	  "path": "<MQFMDB>/MQFMDB_Demo.sqlite",
-	  "key": "123456789",
-	  "upgrade": {
-	  	"1.0.0": {
-	  		"commands": [
-	  			"ALTER TABLE `TDSession` ADD COLUMN count INTEGER"
-	  		]
-	  	}
-	  }
-	}
-	```
+```
+@interface TDSession : MQFMDBObject
 
-2. 修改**TDSession**类, 增加**count**属性，并且使用`dynamic`声明该属性
-
-	```
-	@interface TDSession : MQFMDBObject
-	
-	@property (nonatomic, copy) NSString * name;
-	/** version-1.0.1 */
-	@property (nonatomic, assign) NSInteger count;
-	@end
-	
-	@implementation TDSession
-	
-	@dynamic name;
-	@dynamic count;
-	@end
-	```
-
-3. 重新打开数据库就完成了升级**运行之前需要保证当前数据库版本处于1.0.0版本**
-
-	>
-	对于SQLite不支持删除字段，所以推荐的做法是忽略这个字段，比如在类中删除该字段对应的属性
+@property (nonatomic, copy) NSString * name;
+@end
+```
+```
+@implementation TDSession
+@dynamic name;
 
 
+@end
+```
 
-Demo中有增删查改的演示, **在Swift中使用，请使用桥接方法**
+__创建数据库__
+
+```
+/** 生成数据库并且打开相关配置在conf文件 */
+self.userDB = [[MQFMDB alloc] initWithConfigContent:configContent];
+[self.userDB openDatabaseWithOpertions:^(MQFMDB *db) {
+/** 在这里创建表如果不存在才创建 */
+[db insertNewTable:[TDMessage class]];
+[db insertNewTable:[TDSession class]];
+}];
+```
+__查询__
+
+```
+// 下面语句等于 SELECT * FROM TDMessage WHERE session == 1
+// [self.dataArray setArray:[self.userDB queryTable:[TDMessage class] condition:[NSString stringWithFormat:@"session == 1"]]];
+// 下面语句等于 SELECT * FROM TDMessage
+[self.dataArray setArray:[self.userDB queryTable:[TDMessage class] condition:nil]];
+```
+__插入__
+
+```
+// 使用这种方法创建的对象才会保存进数据库
+TDSession * session = [self.userDB insertNewObjectForTable:[TDSession class]];
+session.name = @"session";
+
+TDMessage * message = [self.userDB insertNewObjectForTable:[TDMessage class]];
+message.session = session;
+message.type = arc4random() % 10;
+message.state = arc4random() % 3;
+message.time = [NSDate date];
+message.content = @"插入测试";
+
+message.latitude = arc4random() % 1000;
+message.longitude = arc4random() % 1000;
+
+message.params = @{@"123":@(123), @"345" : @(345), @"params": @{@"123":@(123), @"345" : @(345)}};
+message.array = @[@"1", @"2", @"3", @"4"];
+// 执行这个方法只会才会保存操作
+[self.userDB saveOpertion];
+```
+__修改__
+
+```
+TDMessage * message = [self.dataArray objectAtIndex:selectedIndexPath.row];
+message.type = arc4random() % 10;
+message.state = arc4random() % 3;
+message.time = [NSDate date];
+message.content = @"插入测试";
+
+message.longitude = arc4random() % 1000;
+message.latitude = arc4random() % 1000;
+
+message.params = @{@"123":@(123), @"345" : @(345), @"params": @{@"123":@(123), @"345" : @(345)}};
+message.array = @[@"1", @"2", @"3", @"4"];
+
+[self.userDB saveOpertion];
+```
+
+__删除__
+
+```
+TDMessage * message = [self.dataArray objectAtIndex:selectedIndexPath.row];
+[self.userDB deleteObject:message];
+```

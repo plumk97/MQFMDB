@@ -17,6 +17,7 @@
 		1E0B9FE11C870E160051437D /* MQFMDB.m in Sources */ = {isa = PBXBuildFile; fileRef = 1E0B9FDF1C870E160051437D /* MQFMDB.m */; };
 		1E0B9FE71C870F440051437D /* MQFMDBObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 1E0B9FE61C870F440051437D /* MQFMDBObject.m */; };
 		1E3782F11C87DEDC00714607 /* TDMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = 1E3782F01C87DEDC00714607 /* TDMessage.m */; };
+		5155709E2438B22600BD75D9 /* db_upgrade_101.sql in Resources */ = {isa = PBXBuildFile; fileRef = 5155709D2438B22600BD75D9 /* db_upgrade_101.sql */; };
 		62A704091EBAD0C500AF47C1 /* MQFMDBIDAutoincrement.m in Sources */ = {isa = PBXBuildFile; fileRef = 62A704071EBAD0C500AF47C1 /* MQFMDBIDAutoincrement.m */; };
 		62A7040B1EBAD16600AF47C1 /* MQFMDB_Demo.conf in Resources */ = {isa = PBXBuildFile; fileRef = 62A7040A1EBAD16600AF47C1 /* MQFMDB_Demo.conf */; };
 		62B54D731F7D05690066B426 /* TDSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 62B54D721F7D05690066B426 /* TDSession.m */; };
@@ -43,6 +44,7 @@
 		1E3782F01C87DEDC00714607 /* TDMessage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDMessage.m; sourceTree = "<group>"; };
 		2C14FE2084FB748DD539871E /* Pods-MQFMDB.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MQFMDB.debug.xcconfig"; path = "Target Support Files/Pods-MQFMDB/Pods-MQFMDB.debug.xcconfig"; sourceTree = "<group>"; };
 		2E5305B249056D19A3CB528D /* Pods-MQFMDB.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MQFMDB.release.xcconfig"; path = "Target Support Files/Pods-MQFMDB/Pods-MQFMDB.release.xcconfig"; sourceTree = "<group>"; };
+		5155709D2438B22600BD75D9 /* db_upgrade_101.sql */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = db_upgrade_101.sql; sourceTree = "<group>"; };
 		62A704061EBAD0C500AF47C1 /* MQFMDBIDAutoincrement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MQFMDBIDAutoincrement.h; sourceTree = "<group>"; };
 		62A704071EBAD0C500AF47C1 /* MQFMDBIDAutoincrement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MQFMDBIDAutoincrement.m; sourceTree = "<group>"; };
 		62A7040A1EBAD16600AF47C1 /* MQFMDB_Demo.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MQFMDB_Demo.conf; sourceTree = "<group>"; };
@@ -100,6 +102,7 @@
 				1E0B9FC21C8708820051437D /* Supporting Files */,
 				62A7040A1EBAD16600AF47C1 /* MQFMDB_Demo.conf */,
 				62DDED3F2049551100EB2311 /* MQFMDB_Demo-1.0.1.conf */,
+				5155709D2438B22600BD75D9 /* db_upgrade_101.sql */,
 			);
 			path = MQFMDB;
 			sourceTree = "<group>";
@@ -206,6 +209,7 @@
 			files = (
 				1E0B9FD21C8708820051437D /* LaunchScreen.storyboard in Resources */,
 				1E0B9FCF1C8708820051437D /* Assets.xcassets in Resources */,
+				5155709E2438B22600BD75D9 /* db_upgrade_101.sql in Resources */,
 				62A7040B1EBAD16600AF47C1 /* MQFMDB_Demo.conf in Resources */,
 				1E0B9FCD1C8708820051437D /* Main.storyboard in Resources */,
 				62DDED402049551100EB2311 /* MQFMDB_Demo-1.0.1.conf in Resources */,

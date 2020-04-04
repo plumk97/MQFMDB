@@ -122,13 +122,6 @@
     [[self dbCacheDict] setObject:version forKey:@"version"];
 }
 
-- (NSInteger)upgradeSqlIndex {
-    return [[[self dbCacheDict] objectForKey:@"upgradeSqlIndex"] integerValue];
-}
-
-- (void)setUpgradeSqlIndex:(NSInteger)index {
-    [[self dbCacheDict] setObject:@(index) forKey:@"upgradeSqlIndex"];
-}
 
 // MARK: - 升级
 
@@ -136,25 +129,26 @@
     return [[version stringByReplacingOccurrencesOfString:@"." withString:@""] integerValue];
 }
 
-- (BOOL)executeUpgradeCommands:(NSArray <NSString *> *)commands  {
-    if (!commands) return YES;
-    
-    for (NSInteger i = [self upgradeSqlIndex]; i < commands.count; i ++) {
-        
-        
-        if (![self.database executeUpdate:commands[i]]) {
-            [self setUpgradeSqlIndex:i];
-            [MQFMDB synchronizeVersionCache];
-            return NO;
-        }
-        
-        [self setUpgradeSqlIndex:i + 1];
-        [MQFMDB synchronizeVersionCache];
+- (BOOL)executeUpgradeScript:(NSString *)scriptFile {
+
+    BOOL isExist = [[NSFileManager defaultManager] fileExistsAtPath:scriptFile];
+    if (!isExist) {
+        return NO;
     }
-    
-    [self setUpgradeSqlIndex:0];
-    [MQFMDB synchronizeVersionCache];
-    return YES;
+
+    NSError * error;
+    NSString * content = [[NSString alloc] initWithContentsOfFile:scriptFile encoding:NSUTF8StringEncoding error:&error];
+    if (error != nil) {
+        NSLog(@"%@", error);
+        return NO;
+    }
+    [self.database beginTransaction];
+    BOOL isOK = [self.database executeStatements:content];
+    if (!isOK) {
+        [self.database rollback];
+    }
+    [self.database commit];
+    return isOK;
 }
 
 /**
@@ -178,8 +172,17 @@
     for (NSString * key in keys) {
         NSInteger i_key = [self integerForVersion:key];
         if (i_version <= i_key) {
+
+            NSString * script = [[self.dbConfig.upgradeConfig objectForKey:key] objectForKey:@"script"];
+            if (script.length <= 0) {
+                continue;
+            }
             
-            BOOL isOk = [self executeUpgradeCommands:[[self.dbConfig.upgradeConfig objectForKey:key] objectForKey:@"commands"]];
+            script = [script stringByReplacingOccurrencesOfString:@"<App>" withString:[[NSBundle mainBundle] bundlePath]];
+            script = [script stringByReplacingOccurrencesOfString:@"<MQFMDB>" withString:[MQFMDB MQFMDBFolder]];
+            
+            BOOL isOk = [self executeUpgradeScript:script];
+            
             if (!isOk) {
                 return NO;
             }

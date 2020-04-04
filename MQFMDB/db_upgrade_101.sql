@@ -1,0 +1,1 @@
+ALTER TABLE `TDSession` ADD COLUMN count INTEGER;

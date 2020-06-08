@@ -100,20 +100,19 @@
     
     NSIndexPath * selectedIndexPath = [self.tableView indexPathForSelectedRow];
     if (selectedIndexPath) {
-    
         TDMessage * message = [self.dataArray objectAtIndex:selectedIndexPath.row];
         message.type = arc4random() % 10;
         message.state = arc4random() % 3;
         message.time = [NSDate date];
         message.content = nil;
-        
+
         message.longitude = arc4random() % 1000;
         message.latitude = arc4random() % 1000;
-        
+
         message.params = @{@"123":@(123), @"345" : @(345), @"params": @{@"123":@(123), @"345" : @(345)}};
         message.array = @[@"1", @"2", @"3", @"4"];
-       
-        
+
+
         [self.userDB saveOpertion];
         [self.tableView reloadData];
     }

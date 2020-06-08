@@ -124,8 +124,10 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
 }
 
 
-@interface MQFMDBObject ()
-
+@interface MQFMDBObject () {
+    
+    dispatch_queue_t _opertion_set_queue_t;
+}
 
 @property (nonatomic, copy) NSArray * initialPropertyDictKeys;
 @property (nonatomic, strong) NSMutableDictionary * propertyDict;
@@ -195,6 +197,7 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
 - (id) init {
     self = [super init];
     if (self) {
+        _opertion_set_queue_t = dispatch_queue_create("MQFMDBObject_set_queue", DISPATCH_QUEUE_SERIAL);
         self.propertyDict = [[NSMutableDictionary alloc] init];
         self.dbObjectIdDict = [[NSMutableDictionary alloc] init];
     }
@@ -236,8 +239,10 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
 - (void)setValue:(id)value forKey:(NSString *)key {
     
     if ([self propertyIsTableFieldWithPropertyName:key]) {
-        [self.propertyDict setObject:value forKey:key];
-        [self markUpdateStatus];
+        dispatch_sync(_opertion_set_queue_t, ^{
+            [self.propertyDict setObject:value forKey:key];
+            [self markUpdateStatus];
+        });
         return;
     }
     [super setValue:value forKey:key];
@@ -329,140 +334,149 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
     }
     
     if (isSet) {
-        // SET
-        NSObject * obj = nil;
-        switch (property_type) {
-            case _PROPERTY_TYPE_Invalid:
-                break;
-            case _PROPERTY_TYPE_Int: {
-                if (0) {
-                } else if (strcmp(@encode(short), encode_str) == 0) {
-                    short value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithShort:value];
-                } else if (strcmp(@encode(unsigned short), encode_str) == 0) {
-                    unsigned short value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithUnsignedShort:value];
-                } else if (strcmp(@encode(int), encode_str) == 0) {
-                    int value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithInt:value];
-                } else if (strcmp(@encode(unsigned int), encode_str) == 0) {
-                    unsigned int value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithUnsignedInt:value];
-                } else if (strcmp(@encode(long), encode_str) == 0) {
-                    long value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithLong:value];
-                } else if (strcmp(@encode(unsigned long), encode_str) == 0) {
-                    unsigned long value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithUnsignedLong:value];
-                } else if (strcmp(@encode(long long), encode_str) == 0) {
-                    long long value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithLongLong:value];
-                } else if (strcmp(@encode(unsigned long long), encode_str) == 0) {
-                    unsigned long long value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithUnsignedLongLong:value];
-                } else if (strcmp(@encode(NSInteger), encode_str) == 0) {
-                    NSInteger value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithInteger:value];
-                } else if (strcmp(@encode(NSUInteger), encode_str) == 0) {
-                    NSUInteger value = 0;
-                    [invocation getArgument:&value atIndex:2];
-                    obj = [NSNumber numberWithUnsignedInteger:value];
-                }
-            }
-                break;
-            case _PROPERTY_TYPE_BOOL: {
-                BOOL value = false;
-                [invocation getArgument:&value atIndex:2];
-                obj = [NSNumber numberWithBool:value];
-            }
-                break;
-            case _PROPERTY_TYPE_Float: {
-                float value = 0;
-                [invocation getArgument:&value atIndex:2];
-                obj = [NSNumber numberWithFloat:value];
-            }
-                break;
-            case _PROPERTY_TYPE_Double: {
-                double value = 0;
-                [invocation getArgument:&value atIndex:2];
-                obj = [NSNumber numberWithDouble:value];
-            }
-                break;
-            case _PROPERTY_TYPE_NSString: {
-                __unsafe_unretained NSString * string = nil;
-                [invocation getArgument:&string atIndex:2];
-                if (string) {
-                    obj = string;
-                }
-            }
-                break;
-            case _PROPERTY_TYPE_NSDate: {
-                __unsafe_unretained NSDate * date = nil;
-                [invocation getArgument:&date atIndex:2];
-                if (date) {
-                    obj = date;
-                }
-            }
-                break;
-            case _PROPERTY_TYPE_NSData: {
-                __unsafe_unretained NSData * data = nil;
-                [invocation getArgument:&data atIndex:2];
-                if (data) {
-                    obj = data;
-                }
-            }
-                break;
-            case _PROPERTY_TYPE_NSDictionary: {
-                __unsafe_unretained NSDictionary * dict;
-                [invocation getArgument:&dict atIndex:2];
-                if (dict) {
-                    obj = dict;
-                }
-            }
-                break;
-            case _PROPERTY_TYPE_NSArray: {
-                __unsafe_unretained NSArray * array = nil;
-                [invocation getArgument:&array atIndex:2];
-                if (array) {
-                    obj = array;
-                }
-            }
-                break;
-            case _PROPERTY_TYPE_MQFMDBObject:{
-                __unsafe_unretained MQFMDBObject * object = nil;
-                [invocation getArgument:&object atIndex:2];
-                if (object) {
-                    obj = object;
-                }
-                [self.dbObjectIdDict removeObjectForKey:key];
-            }
-                break;
-            default:
-                break;
-        }
-        
-        [self willChangeValueForKey:key];
-        if (obj) {
-            [self.propertyDict setObject:obj forKey:key];
-        } else {
-            [self.propertyDict removeObjectForKey:key];
-        }
-        [self didChangeValueForKey:key];
-        
-        [self markUpdateStatus];
-        
+        dispatch_sync(_opertion_set_queue_t, ^{
+            [self handleSetInvocation:invocation key:key property:t property_type:property_type encode_str:encode_str];
+        });
     } else {
-        // GET
-        void * value = NULL;
+        [self handleGetInvocation:invocation key:key property:t property_type:property_type encode_str:encode_str];
+    }
+}
+
+- (void)handleSetInvocation:(NSInvocation *)invocation key:(NSString *)key property:(objc_property_t)property property_type:(_PROPERTY_TYPE)property_type encode_str:(char *)encode_str {
+    // SET
+    NSObject * obj = nil;
+    switch (property_type) {
+        case _PROPERTY_TYPE_Invalid:
+            break;
+        case _PROPERTY_TYPE_Int: {
+            if (0) {
+            } else if (strcmp(@encode(short), encode_str) == 0) {
+                short value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithShort:value];
+            } else if (strcmp(@encode(unsigned short), encode_str) == 0) {
+                unsigned short value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithUnsignedShort:value];
+            } else if (strcmp(@encode(int), encode_str) == 0) {
+                int value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithInt:value];
+            } else if (strcmp(@encode(unsigned int), encode_str) == 0) {
+                unsigned int value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithUnsignedInt:value];
+            } else if (strcmp(@encode(long), encode_str) == 0) {
+                long value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithLong:value];
+            } else if (strcmp(@encode(unsigned long), encode_str) == 0) {
+                unsigned long value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithUnsignedLong:value];
+            } else if (strcmp(@encode(long long), encode_str) == 0) {
+                long long value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithLongLong:value];
+            } else if (strcmp(@encode(unsigned long long), encode_str) == 0) {
+                unsigned long long value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithUnsignedLongLong:value];
+            } else if (strcmp(@encode(NSInteger), encode_str) == 0) {
+                NSInteger value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithInteger:value];
+            } else if (strcmp(@encode(NSUInteger), encode_str) == 0) {
+                NSUInteger value = 0;
+                [invocation getArgument:&value atIndex:2];
+                obj = [NSNumber numberWithUnsignedInteger:value];
+            }
+        }
+            break;
+        case _PROPERTY_TYPE_BOOL: {
+            BOOL value = false;
+            [invocation getArgument:&value atIndex:2];
+            obj = [NSNumber numberWithBool:value];
+        }
+            break;
+        case _PROPERTY_TYPE_Float: {
+            float value = 0;
+            [invocation getArgument:&value atIndex:2];
+            obj = [NSNumber numberWithFloat:value];
+        }
+            break;
+        case _PROPERTY_TYPE_Double: {
+            double value = 0;
+            [invocation getArgument:&value atIndex:2];
+            obj = [NSNumber numberWithDouble:value];
+        }
+            break;
+        case _PROPERTY_TYPE_NSString: {
+            __unsafe_unretained NSString * string = nil;
+            [invocation getArgument:&string atIndex:2];
+            if (string) {
+                obj = string;
+            }
+        }
+            break;
+        case _PROPERTY_TYPE_NSDate: {
+            __unsafe_unretained NSDate * date = nil;
+            [invocation getArgument:&date atIndex:2];
+            if (date) {
+                obj = date;
+            }
+        }
+            break;
+        case _PROPERTY_TYPE_NSData: {
+            __unsafe_unretained NSData * data = nil;
+            [invocation getArgument:&data atIndex:2];
+            if (data) {
+                obj = data;
+            }
+        }
+            break;
+        case _PROPERTY_TYPE_NSDictionary: {
+            __unsafe_unretained NSDictionary * dict;
+            [invocation getArgument:&dict atIndex:2];
+            if (dict) {
+                obj = dict;
+            }
+        }
+            break;
+        case _PROPERTY_TYPE_NSArray: {
+            __unsafe_unretained NSArray * array = nil;
+            [invocation getArgument:&array atIndex:2];
+            if (array) {
+                obj = array;
+            }
+        }
+            break;
+        case _PROPERTY_TYPE_MQFMDBObject:{
+            __unsafe_unretained MQFMDBObject * object = nil;
+            [invocation getArgument:&object atIndex:2];
+            if (object) {
+                obj = object;
+            }
+            [self.dbObjectIdDict removeObjectForKey:key];
+        }
+            break;
+        default:
+            break;
+    }
+    
+    [self willChangeValueForKey:key];
+    if (obj) {
+        [self.propertyDict setObject:obj forKey:key];
+    } else {
+        [self.propertyDict removeObjectForKey:key];
+    }
+    [self didChangeValueForKey:key];
+    
+    [self markUpdateStatus];
+}
+
+- (void)handleGetInvocation:(NSInvocation *)invocation key:(NSString *)key property:(objc_property_t)property property_type:(_PROPERTY_TYPE)property_type encode_str:(char *)encode_str {
+    void * value = NULL;
         if (!self.propertyDict || property_type == _PROPERTY_TYPE_Invalid) {
             [invocation setReturnValue:&value];
             return;
@@ -536,7 +550,7 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
                 }
                 if (!self.affiliationDB) return;
                 
-                NSString * attibutes = [NSString stringWithUTF8String:property_getAttributes(t)];
+                NSString * attibutes = [NSString stringWithUTF8String:property_getAttributes(property)];
                 NSArray * attibutesList = [attibutes componentsSeparatedByString:@","];
                 NSString * class = [attibutesList firstObject];
                 class = [class substringWithRange:NSMakeRange(3, class.length - 4)];
@@ -582,9 +596,7 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
                 break;
         }
         [invocation setReturnValue:&value];
-    }
 }
-
 
 // MARK: - Description
 /**
@@ -601,17 +613,18 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
 
 - (void)allDescription:(Class)cls outString:(NSMutableString * __autoreleasing *)outString {
     
+    NSDictionary * propertyDict = [self.propertyDict copy];
     __weak __typeof (self) weakSelf = self;
     [[self class] enumAllPropertyWithClass:cls execute:^(const char *propertyName, _PROPERTY_TYPE propertyType, SQLITE_FIELD_TYPE fieldType, objc_property_t property) {
         
-        id obj = [weakSelf.propertyDict objectForKey:[NSString stringWithUTF8String:propertyName]];
+        id obj = [propertyDict objectForKey:[NSString stringWithUTF8String:propertyName]];
         if (propertyType == _PROPERTY_TYPE_MQFMDBObject) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
             obj = [weakSelf performSelector:sel_getUid(propertyName)];
 #pragma clang diagnostic pop
         }
-        [*outString appendFormat:@"%s : %@ \n",propertyName, obj];
+        [*outString appendFormat:@"%s: %@ \n",propertyName, obj];
     }];
 }
 
@@ -623,20 +636,21 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
  */
 - (NSString *)objectInsertCommandValues:(NSArray *__autoreleasing *)outValues {
     
-    if (self.propertyDict.allKeys.count <= 0) {
+    NSDictionary * propertyDict = [self.propertyDict copy];
+    if (propertyDict.allKeys.count <= 0) {
         return nil;
     }
     
     NSMutableString * command = [[NSMutableString alloc] init];
     [command appendFormat:@"INSERT INTO \"%@\" (", [[self class] tablename]];
     
-    NSArray * allKey = [self.propertyDict allKeys];
+    NSArray * allKey = [propertyDict allKeys];
     NSMutableArray * mValues = [NSMutableArray array];
     for (NSString * key in allKey) {
         
         [command appendFormat:@"%@,", key];
         
-        id object = [self.propertyDict objectForKey:key];
+        id object = [propertyDict objectForKey:key];
         if ([object isKindOfClass:[MQFMDBObject class]]) {
             [mValues addObject:[NSNumber numberWithInteger:((MQFMDBObject *)object)._Id]];
             
@@ -675,7 +689,8 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
  */
 - (NSString *)objectUpdateCommandValues:(NSArray *__autoreleasing *)outValues {
     
-    if (self.propertyDict.allKeys.count <= 0) {
+    NSDictionary * propertyDict = [self.propertyDict copy];
+    if (propertyDict.allKeys.count <= 0) {
         return nil;
     }
     NSMutableString * command = [[NSMutableString alloc] init];
@@ -685,7 +700,7 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
     NSMutableArray * mChangeValues = [NSMutableArray array];
     for (NSString * key in self.initialPropertyDictKeys) {
         
-        id newObject = [self.propertyDict objectForKey:key];
+        id newObject = [propertyDict objectForKey:key];
         
         if (newObject == nil) {
             [command appendFormat:@"'%@' = NULL,", key];
@@ -711,7 +726,7 @@ NSString * SQLITE_FIELD_TYPE_STR(SQLITE_FIELD_TYPE type) {
         [command deleteCharactersInRange:NSMakeRange(command.length - 1, 1)];
     }
     
-    [command appendFormat:@" WHERE _Id = '%@'", [self.propertyDict objectForKey:@"_Id"]];
+    [command appendFormat:@" WHERE _Id = '%@'", [propertyDict objectForKey:@"_Id"]];
     *outValues = [[NSArray alloc] initWithArray:mChangeValues];
     return command;
 }

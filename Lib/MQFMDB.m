@@ -12,13 +12,14 @@
 
 @interface MQFMDB () {
     
-    dispatch_queue_t _opertion_queue_t;
+    dispatch_queue_t _sql_queue_t;
+    dispatch_queue_t _wait_operation_objects_queue_t;
 }
 @property (nonatomic, strong) FMDatabase * database;
 
 @property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBIDAutoincrement *> * autoincrements;
 @property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBObject *> * objects;
-@property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBObject *> * waiteOpertionObjects;
+@property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBObject *> * waitOperationObjects;
 
 @end
 
@@ -75,11 +76,13 @@
     self = [super init];
     if (self) {
         
-        _opertion_queue_t = dispatch_queue_create("_opertion_queue_t", DISPATCH_QUEUE_SERIAL);
+        _sql_queue_t = dispatch_queue_create("_sql_queue_t", DISPATCH_QUEUE_SERIAL);
+        _wait_operation_objects_queue_t = dispatch_queue_create("_wait_operation_objects_queue_t", DISPATCH_QUEUE_SERIAL);
+        
         _dbConfig = [self readConfigContent:configContent];
         self.objects = [[NSMutableDictionary alloc] init];
         self.autoincrements = [[NSMutableDictionary alloc] init];
-        self.waiteOpertionObjects = [[NSMutableDictionary alloc] init];
+        self.waitOperationObjects = [[NSMutableDictionary alloc] init];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(clearCache) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
@@ -268,8 +271,8 @@
 
 
 - (void)addOneUpdateObject:(MQFMDBObject *)object {
-    dispatch_sync(_opertion_queue_t, ^{
-        [self.waiteOpertionObjects setObject:object forKey:[[self class] keyWithClass:[object class] _Id:object._Id]];
+    dispatch_sync(_wait_operation_objects_queue_t, ^{
+        [self.waitOperationObjects setObject:object forKey:[[self class] keyWithClass:[object class] _Id:object._Id]];
     });
 }
 /**
@@ -283,7 +286,7 @@
     
     __block BOOL isExists = NO;
     
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         isExists = [self.database tableExists:[cls tablename]];
     });
     return isExists;
@@ -300,7 +303,7 @@
     
     __block BOOL isSucceed = NO;
     isSucceed = [self tableExists:cls];
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         NSString * cur = [cls tableCreateCommand];
         if (!isSucceed) {
             isSucceed = [self.database executeUpdate:cur];
@@ -333,7 +336,7 @@
     
     __block MQFMDBObject * object = nil;
     
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         object = [cls objectWithDictionary:dictionary inDB:self];
         
         MQFMDBIDAutoincrement * autoincrement = [self getIdAutoincrementWithClass:cls];
@@ -348,7 +351,10 @@
         
         NSString * key = [MQFMDB keyWithClass:cls _Id:_id];
         [self.objects setObject:object forKey:key];
-        [self.waiteOpertionObjects setObject:object forKey:key];
+        
+        dispatch_sync(_wait_operation_objects_queue_t, ^{
+            [self.waitOperationObjects setObject:object forKey:key];
+        });
     });
     return object;
 }
@@ -375,7 +381,7 @@
 - (BOOL)deleteObject:(MQFMDBObject *)object {
     
     __block BOOL isSucceed = NO;
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         isSucceed = [self _deleteObject:object];
     });
     return isSucceed;
@@ -390,7 +396,9 @@
     NSString * key = [MQFMDB keyWithClass:[object class] _Id:object._Id];
     if (object.objectState == MQFMDBObjectStateInsert) {
         [self.objects removeObjectForKey:key];
-        [self.waiteOpertionObjects removeObjectForKey:key];
+        dispatch_sync(_wait_operation_objects_queue_t, ^{
+           [self.waitOperationObjects removeObjectForKey:key];
+        });
         isSucceed = YES;
     }
     
@@ -400,7 +408,9 @@
         isSucceed = [self.database executeUpdate:command];
         if (isSucceed) {
             [self.objects removeObjectForKey:key];
-            [self.waiteOpertionObjects removeObjectForKey:key];
+            dispatch_sync(_wait_operation_objects_queue_t, ^{
+               [self.waitOperationObjects removeObjectForKey:key];
+            });
         }
     }
     return isSucceed;
@@ -413,7 +423,7 @@
  *  @param completion
  */
 - (void)deleteObjects:(NSArray <MQFMDBObject *> *)objects {
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         [self.database beginTransaction];
         for (MQFMDBObject * object in objects) {
             [self _deleteObject:object];
@@ -430,7 +440,7 @@
  */
 - (void)deleteCacheObject:(MQFMDBObject *)object {
     
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         NSString * key = [MQFMDB keyWithClass:[object class] _Id:object._Id];
         [self.objects removeObjectForKey:key];
     });
@@ -441,8 +451,10 @@
  */
 - (void)clearCache {
     [self saveOpertion];
-    dispatch_sync(_opertion_queue_t, ^{
-        [self.waiteOpertionObjects removeAllObjects];
+    dispatch_sync(_sql_queue_t, ^{
+        dispatch_sync(_wait_operation_objects_queue_t, ^{
+           [self.waitOperationObjects removeAllObjects];
+        });
         [self.objects removeAllObjects];
     });
 }
@@ -454,7 +466,7 @@
 - (BOOL)deleteTable:(Class)cls {
     
     __block BOOL succeed = NO;
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         for (NSString * key in self.objects.allKeys) {
             MQFMDBObject * obj = [self.objects objectForKey:key];
             if ([obj isKindOfClass:cls]) {
@@ -474,7 +486,7 @@
  */
 - (BOOL)dropTable:(Class)cls {
     __block BOOL succeed = NO;
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         for (NSString * key in self.objects.allKeys) {
             MQFMDBObject * obj = [self.objects objectForKey:key];
             if ([obj isKindOfClass:cls]) {
@@ -491,20 +503,21 @@
  */
 - (void)saveOpertion {
     
-    
-    dispatch_sync(_opertion_queue_t, ^{
-        if (self.waiteOpertionObjects.count == 0) {
+    dispatch_sync(_sql_queue_t, ^{
+        NSDictionary * waitOperationObjects = [self.waitOperationObjects copy];
+        
+        if (waitOperationObjects.count == 0) {
             return;
         }
         
         BOOL isTransaction = NO;
-        if (self.waiteOpertionObjects.count > 1) {
+        if (waitOperationObjects.count > 1) {
             [self.database beginTransaction];
             isTransaction = YES;
         }
         
         @try {
-            for (MQFMDBObject * object in self.waiteOpertionObjects.allValues) {
+            for (MQFMDBObject * object in waitOperationObjects.allValues) {
                 
                 if (object.objectState == MQFMDBObjectStateInsert) {
                     
@@ -528,7 +541,11 @@
                     [object setValue:[NSNumber numberWithInteger:MQFMDBObjectStateNone] forKey:@"objectState"];
                 }
             }
-            [self.waiteOpertionObjects removeAllObjects];
+            
+            dispatch_sync(_wait_operation_objects_queue_t, ^{
+                [self.waitOperationObjects removeAllObjects];
+            });
+            
         } @catch (NSException *exception) {
             NSLog(@"%@", exception);
         } @finally {
@@ -539,6 +556,7 @@
             [self.database commit];
         }
     });
+    
 }
 
 /**
@@ -605,7 +623,7 @@
 - (NSArray *)_queryTable:(Class)cls condition:(NSString *)condition values:(NSArray *)values {
     
     NSMutableArray * mArr = [[NSMutableArray alloc] init];
-    dispatch_sync(_opertion_queue_t, ^{
+    dispatch_sync(_sql_queue_t, ^{
         NSString * query = nil;
         
         if ([condition rangeOfString:@"ORDER"].length > 0) {
@@ -665,7 +683,7 @@
 - (NSDictionary <NSString *, MQFMDBObject *> *)dict_queryTable:(Class)cls condition:(NSString *)condition keyWithField:(NSString *)field {
     
     NSMutableDictionary * mDict = [[NSMutableDictionary alloc] init];
-    dispatch_sync(_opertion_queue_t, ^ {
+    dispatch_sync(_sql_queue_t, ^ {
         
         NSString * query = nil;
         if ([condition rangeOfString:@"ORDER"].length > 0) {

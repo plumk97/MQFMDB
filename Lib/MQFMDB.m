@@ -146,12 +146,24 @@
         return NO;
     }
     [self.database beginTransaction];
-    BOOL isOK = [self.database executeStatements:content];
-    if (!isOK) {
-        [self.database rollback];
+    
+    NSArray<NSString *> * statements = [content componentsSeparatedByString:@";"];
+    for (NSString * statement in statements) {
+        BOOL isOK = [self.database executeStatements:statement];
+        
+        // 防止跨版本升级 某些表在旧版本不存在报错 导致升级失败 也有可能会有其他问题
+        if ([self.database.lastErrorMessage hasPrefix:@"no such table"]) {
+            isOK = YES;
+        }
+        
+        if (!isOK) {
+            [self.database rollback];
+            return NO;
+        }
     }
+    
     [self.database commit];
-    return isOK;
+    return YES;
 }
 
 /**

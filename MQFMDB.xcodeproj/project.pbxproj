@@ -179,8 +179,8 @@
 				TargetAttributes = {
 					1E0B9FBE1C8708820051437D = {
 						CreatedOnToolsVersion = 7.2.1;
-						DevelopmentTeam = G3ZJK4HLMZ;
-						ProvisioningStyle = Manual;
+						DevelopmentTeam = 5QY2MC95W4;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -408,7 +408,9 @@
 			baseConfigurationReference = 2C14FE2084FB748DD539871E /* Pods-MQFMDB.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = G3ZJK4HLMZ;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5QY2MC95W4;
 				INFOPLIST_FILE = MQFMDB/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";

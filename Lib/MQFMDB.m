@@ -8,7 +8,12 @@
 
 #import "MQFMDB.h"
 #import "MQFMDBIDAutoincrement.h"
+
+#if TARGET_OS_OSX
+#import <Cocoa/Cocoa.h>
+#else
 #import <UIKit/UIApplication.h>
+#endif
 
 @interface MQFMDB () {
     
@@ -17,6 +22,7 @@
 }
 @property (nonatomic, strong) FMDatabase * database;
 
+@property (nonatomic, strong) NSMutableDictionary * configDict;
 @property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBIDAutoincrement *> * autoincrements;
 @property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBObject *> * objects;
 @property (nonatomic, strong) NSMutableDictionary <NSString *, MQFMDBObject *> * waitOperationObjects;
@@ -28,47 +34,11 @@
 @synthesize dbConfig = _dbConfig;
 
 // MARK: - Class Method
-+ (NSString *)MQFMDBFolder {
-    
-    NSString * document = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    NSString * folder = [document stringByAppendingPathComponent:@"MQFMDB"];
-    
-    if (![[NSFileManager defaultManager] fileExistsAtPath:folder]) {
-        [[NSFileManager defaultManager] createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:nil];
-    }
-    return folder;
+/// 获取Document目录
++ (NSString *)documentDir {
+    NSString * documentDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    return documentDir;
 }
-
-+ (NSString *)MQFMDBVersionCachePath {
-    
-    static NSString * versionCachePath = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        versionCachePath = [[self MQFMDBFolder] stringByAppendingPathComponent:@"MQFMDBVersionCache.plist"];
-    });
-    return versionCachePath;
-}
-
-+ (NSMutableDictionary *)versionCacheDict {
-    
-    static NSMutableDictionary * MQFMDBVersionCacheDict = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        
-        MQFMDBVersionCacheDict = [[NSMutableDictionary alloc] initWithContentsOfFile:[MQFMDB MQFMDBVersionCachePath]];
-        if (!MQFMDBVersionCacheDict) {
-            MQFMDBVersionCacheDict = [[NSMutableDictionary alloc] init];
-        }
-    });
-    return MQFMDBVersionCacheDict;
-}
-
-+ (void)synchronizeVersionCache {
-    if (MQFMDB.versionCacheDict) {
-        [MQFMDB.versionCacheDict writeToFile:[self MQFMDBVersionCachePath] atomically:YES];
-    }
-}
-
 
 // -----------------------
 - (id)initWithConfigContent:(NSString *)configContent {
@@ -84,7 +54,14 @@
         self.autoincrements = [[NSMutableDictionary alloc] init];
         self.waitOperationObjects = [[NSMutableDictionary alloc] init];
         
+        self.configDict = [[NSMutableDictionary alloc] initWithContentsOfFile: self.configDictCachePath];
+        if (!self.configDict) {
+            self.configDict = [[NSMutableDictionary alloc] init];
+        }
+        
+#if !TARGET_OS_OSX
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(clearCache) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+#endif
     }
     return self;
 }
@@ -97,32 +74,22 @@
     [self clearCache];
 }
 
-- (NSMutableDictionary *)dbCacheDict {
-    id obj = [MQFMDB.versionCacheDict objectForKey:self.dbConfig.identify];
-    if ([obj isKindOfClass:[NSDictionary class]]) {
-        if ([obj isKindOfClass:[NSMutableDictionary class]]) {
-            return obj;
-        }
-        
-        id mobj = [obj mutableCopy];
-        [MQFMDB.versionCacheDict setObject:mobj forKey:self.dbConfig.identify];
-        return mobj;
+- (NSString *)configDictCachePath {
+    return [self.dbConfig.dbDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_VersionCache.plist", self.dbConfig.identify]];
+}
+
+- (void)synchronizeVersionCache {
+    if (self.configDict) {
+        [self.configDict writeToFile:[self configDictCachePath] atomically:YES];
     }
-    
-    NSMutableDictionary * mDict = [[NSMutableDictionary alloc] init];
-    if ([obj isKindOfClass:[NSString class]]) {
-        [mDict setObject:obj forKey:@"version"];
-    }
-    [MQFMDB.versionCacheDict setObject:mDict forKey:self.dbConfig.identify];
-    return mDict;
 }
 
 - (NSString *)version {
-    return [[self dbCacheDict] objectForKey:@"version"];
+    return [[self configDict] objectForKey:@"version"];
 }
 
 - (void)setVersion:(NSString *)version {
-    [[self dbCacheDict] setObject:version forKey:@"version"];
+    [[self configDict] setObject:version forKey:@"version"];
 }
 
 
@@ -188,15 +155,20 @@
         NSInteger i_key = [self integerForVersion:key];
         if (i_version <= i_key) {
 
-            NSString * script = [[self.dbConfig.upgradeConfig objectForKey:key] objectForKey:@"script"];
-            if (script.length <= 0) {
+            NSString * scriptPath = [[self.dbConfig.upgradeConfig objectForKey:key] objectForKey:@"script"];
+            if (scriptPath.length <= 0) {
                 continue;
             }
             
-            script = [script stringByReplacingOccurrencesOfString:@"<App>" withString:[[NSBundle mainBundle] bundlePath]];
-            script = [script stringByReplacingOccurrencesOfString:@"<MQFMDB>" withString:[MQFMDB MQFMDBFolder]];
+#if !TARGET_OS_OSX
+            if ([scriptPath hasPrefix:@"<App>"]) {
+                scriptPath = [scriptPath stringByReplacingOccurrencesOfString:@"<App>" withString:[[NSBundle mainBundle] bundlePath]];
+            } else if ([scriptPath hasPrefix:@"<MQFMDB>"]) {
+                scriptPath = [scriptPath stringByReplacingOccurrencesOfString:@"<MQFMDB>" withString:[[MQFMDB documentDir] stringByAppendingPathComponent:@"MQFMDB"]];
+            }
+#endif
             
-            BOOL isOk = [self executeUpgradeScript:script];
+            BOOL isOk = [self executeUpgradeScript:scriptPath];
             
             if (!isOk) {
                 return NO;
@@ -264,7 +236,7 @@
         opertions(self);
         if (isOK) {
             [self setVersion:self.dbConfig.version];
-            [MQFMDB synchronizeVersionCache];
+            [self synchronizeVersionCache];
         }
     } else {
         [self closeDatabase];
@@ -741,6 +713,7 @@
 @synthesize version = _version;
 
 @synthesize key = _key;
+@synthesize dbDir = _dbDir;
 @synthesize dbPath = _dbPath;
 
 @synthesize upgradeConfig = _upgradeConfig;
@@ -751,14 +724,29 @@
     
     _identify = [configDict objectForKey:@"identify"];
     _version = [configDict objectForKey:@"version"];
-    
-    _dbPath = [configDict objectForKey:@"path"];
-    
-    _dbPath = [_dbPath stringByReplacingOccurrencesOfString:@"<App>" withString:[[NSBundle mainBundle] bundlePath]];
-    _dbPath = [_dbPath stringByReplacingOccurrencesOfString:@"<MQFMDB>" withString:[MQFMDB MQFMDBFolder]];
-    
     _key = [configDict objectForKey:@"key"];
     _upgradeConfig = [configDict objectForKey:@"upgrade"];
+    
+#if TARGET_OS_OSX
+    NSString * path = [configDict objectForKey:@"path"];
+    _dbDir = [path stringByDeletingLastPathComponent];
+    _dbPath = path;
+#else
+    NSString * path = [configDict objectForKey:@"path"];
+    if ([path hasPrefix:@"<App>"]) {
+        path = [path stringByReplacingOccurrencesOfString:@"<App>" withString:[[NSBundle mainBundle] bundlePath]];
+        _dbDir = [path stringByDeletingLastPathComponent];
+    } else if ([path hasPrefix:@"<MQFMDB>"]) {
+        path = [path stringByReplacingOccurrencesOfString:@"<MQFMDB>" withString:[[MQFMDB documentDir] stringByAppendingPathComponent:@"MQFMDB"]];
+        
+        NSString * dir = [path stringByDeletingLastPathComponent];
+        if (![[NSFileManager defaultManager] fileExistsAtPath:dir]) {
+            [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+        }
+        _dbDir = dir;
+    }
+    _dbPath = path;
+#endif
 }
 
 

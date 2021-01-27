@@ -25,13 +25,13 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
-    NSLog(@"%@", [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject]);
-    
     NSString * configContent = [NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"MQFMDB_Demo" ofType:@"conf"] encoding:NSUTF8StringEncoding error:nil];
 //    NSString * configContent = [NSString stringWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"MQFMDB_Demo-1.0.1" ofType:@"conf"] encoding:NSUTF8StringEncoding error:nil];
     
     /** 生成数据库并且打开相关配置在conf文件 */
     self.userDB = [[MQFMDB alloc] initWithConfigContent:configContent];
+    NSLog(@"%@", self.userDB.dbConfig.dbDir);
+    
     [self.userDB openDataBaseWithForceOpenIfUpgradeFail:YES opertions:^(MQFMDB *db) {
         /** 在这里创建表和其他操作 */
         [db insertNewTable:[TDMessage class]];

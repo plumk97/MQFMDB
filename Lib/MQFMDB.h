@@ -19,20 +19,12 @@
 @class MQFMDBConfig;
 @interface MQFMDB : NSObject
 
-@property (nonatomic, class, readonly) NSMutableDictionary * versionCacheDict;
-
 /** 当前数据库配置信息 */
 @property (nonatomic, readonly) MQFMDBConfig * dbConfig;
 /** 当前数据库版本 */
 @property (nonatomic, readonly) NSString * version;
 @property (nonatomic, readonly) FMDatabase * database;
 
-/**
- 数据库存放路径
- 
- @return
- */
-+ (NSString *)MQFMDBFolder;
 
 /**
  *  根据配置文件初始化数据库
@@ -224,6 +216,7 @@
 @property (nonatomic, readonly) NSString * version;
 
 @property (nonatomic, readonly) NSString * key;
+@property (nonatomic, readonly) NSString * dbDir;
 @property (nonatomic, readonly) NSString * dbPath;
 
 @property (nonatomic, readonly) NSDictionary * upgradeConfig;
